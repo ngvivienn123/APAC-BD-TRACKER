@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APAC Pipeline Tracker — Global Blue / Shift4</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:#1a1a1a;background:#f0efe9;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0ddd5;padding:13px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.header h1{font-size:15px;font-weight:700}.header .sub{font-size:11px;color:#999;margin-top:1px}
+.hright{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sync-status{display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 11px;border-radius:99px;border:1px solid #e0ddd5;background:#fafaf8;color:#666;white-space:nowrap}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#ccc;flex-shrink:0;transition:background .3s}
+.sync-dot.ok{background:#2a7d3b}
+.sync-dot.saving{background:#b07800;animation:blink 1s infinite}
+.sync-dot.error{background:#b33}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hbtn{padding:5px 13px;font-size:12px;border:1px solid #bbb;border-radius:6px;background:#fff;cursor:pointer;color:#555;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.hbtn:hover{background:#f1efea}
+.hbtn.export{border-color:#2a7d3b;color:#2a7d3b}.hbtn.export:hover{background:#e8f5e9}
+.main{padding:18px 22px;max-width:1400px;margin:0 auto}
+.smg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-bottom:18px}
+.mc{background:#fff;border-radius:10px;border:1px solid #e0ddd5;padding:11px 13px}
+.ml{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.mv{font-size:21px;font-weight:700}
+.mv.hi{color:#b33}.mv.ok{color:#2a7d3b}.mv.warn{color:#b07800}
+.tabs{display:flex;gap:2px;border-bottom:2px solid #e0ddd5;margin-bottom:16px}
+.tab{padding:8px 15px;font-size:13px;cursor:pointer;border-radius:6px 6px 0 0;color:#888;background:transparent;border:none;font-family:inherit}
+.tab.on{background:#fff;color:#1a1a1a;font-weight:700;border:1px solid #e0ddd5;border-bottom:2px solid #fff;margin-bottom:-2px}
+.tab:hover:not(.on){background:#e8e6df;color:#444}
+.panel{display:none}.panel.on{display:block}
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:11px;flex-wrap:wrap}
+select.filter{padding:5px 9px;font-size:12px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#333;cursor:pointer}
+.addbtn{padding:5px 13px;font-size:12px;border:1px solid #bbb;border-radius:6px;background:#fff;cursor:pointer;color:#555}
+.addbtn:hover{background:#f1efea}
+.ml-auto{margin-left:auto}
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid #e0ddd5;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#888;padding:9px 11px;border-bottom:1px solid #e8e5e0;background:#fafaf8;white-space:nowrap}
+td{padding:9px 11px;border-bottom:1px solid #f0ede8;vertical-align:top;line-height:1.45}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+.b{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap}
+.bg{background:#e8f5e9;color:#2a7d3b}.ba{background:#fff3e0;color:#b07800}.bb{background:#e3f2fd;color:#1255a0}
+.bgr{background:#f1efea;color:#666}.bc{background:#fce4ec;color:#b33}.bp{background:#ede7f6;color:#4527a0}
+.bt{background:#e0f7f2;color:#006651}
+.oname{font-weight:600;color:#1a1a1a;font-size:13px}
+.el{font-size:11px;color:#888;cursor:pointer;text-decoration:underline;margin-right:7px}
+.el:hover{color:#1a1a1a}
+.notes-cell{font-size:12px;color:#555;line-height:1.5}
+.bdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#e53935;margin-right:4px;vertical-align:middle}
+.milestones{display:flex;flex-direction:column;gap:2px;min-width:160px}
+.ms-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-top:5px;margin-bottom:2px}
+.ms-section:first-child{margin-top:0}
+.ms-row{display:flex;align-items:center;gap:6px;padding:2px 0;cursor:pointer;user-select:none}
+.ms-row input[type=checkbox]{width:13px;height:13px;cursor:pointer;accent-color:#2a7d3b;flex-shrink:0;pointer-events:none}
+.ms-label{font-size:11.5px;color:#444;line-height:1.3}
+.ms-label.done{text-decoration:line-through;color:#aaa}
+.ms-progress{display:flex;gap:2px;align-items:center;margin-top:4px;cursor:pointer}
+.ms-pip{width:10px;height:10px;border-radius:2px;background:#e8e5e0}
+.ms-pip.on{background:#2a7d3b}
+.ms-pct{font-size:10px;color:#888;margin-left:3px}
+.attach-list{display:flex;flex-direction:column;gap:3px;margin-top:4px}
+.attach-item{display:flex;align-items:center;gap:5px;font-size:11px;background:#f5f4f0;border-radius:5px;padding:3px 7px;max-width:190px}
+.attach-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#333;cursor:pointer;text-decoration:underline}
+.attach-del{color:#bbb;cursor:pointer;font-size:13px;line-height:1;flex-shrink:0}
+.attach-del:hover{color:#b33}
+.attach-add{font-size:11px;color:#888;cursor:pointer;text-decoration:underline;display:inline-block;margin-top:3px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{background:#fff;border-radius:12px;padding:22px;width:540px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.modal h3{font-size:14px;font-weight:700;margin-bottom:14px}
+.modal-tabs{display:flex;gap:2px;border-bottom:1px solid #e0ddd5;margin-bottom:14px}
+.modal-tab{padding:6px 12px;font-size:12px;cursor:pointer;border-radius:5px 5px 0 0;color:#888;background:transparent;border:none;font-family:inherit}
+.modal-tab.on{background:#f5f4f0;color:#1a1a1a;font-weight:700;border:0.5px solid #e0ddd5;border-bottom:1px solid #f5f4f0;margin-bottom:-1px}
+.modal-panel{display:none}.modal-panel.on{display:block}
+.fd{margin-bottom:11px}
+.fd label{display:block;font-size:11px;color:#888;margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.fd input,.fd select,.fd textarea{width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fff}
+.fd input:focus,.fd select:focus,.fd textarea:focus{outline:none;border-color:#888}
+.fd textarea{resize:vertical;min-height:60px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ms-edit-section{margin-bottom:12px}
+.ms-edit-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #f0ede8}
+.ms-edit-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid #f5f4f0}
+.ms-edit-row:last-child{border-bottom:none}
+.ms-edit-check{width:14px;height:14px;cursor:pointer;accent-color:#2a7d3b;flex-shrink:0}
+.ms-edit-label{flex:1;font-size:13px;color:#333}
+.ms-edit-date input{padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:5px;width:130px;font-family:inherit}
+.attach-drop{border:1.5px dashed #ddd;border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:border .15s;margin-bottom:4px}
+.attach-drop:hover,.attach-drop.over{border-color:#888;background:#fafaf8}
+.attach-drop p{font-size:13px;color:#555;margin-bottom:3px;font-weight:500}
+.attach-drop span{font-size:11px;color:#aaa}
+.attach-modal-list{display:flex;flex-direction:column;gap:5px;margin-top:10px}
+.attach-modal-item{display:flex;align-items:center;gap:8px;background:#f5f4f0;border-radius:6px;padding:7px 10px}
+.attach-icon{font-size:18px;flex-shrink:0}
+.attach-info{flex:1;overflow:hidden}
+.attach-info .an{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1a1a1a;cursor:pointer;text-decoration:underline}
+.attach-info .as{font-size:11px;color:#888}
+.attach-modal-del{color:#bbb;cursor:pointer;font-size:18px;line-height:1;padding:2px 5px;flex-shrink:0}
+.attach-modal-del:hover{color:#b33}
+.mf{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid #f0ede8}
+.btp{padding:7px 16px;font-size:12px;background:#1a1a1a;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:700}
+.btc{padding:7px 14px;font-size:12px;background:transparent;border:1px solid #ddd;border-radius:7px;cursor:pointer;color:#666;font-family:inherit}
+.btd{padding:7px 14px;font-size:12px;background:transparent;border:1px solid #f5c6c6;border-radius:7px;cursor:pointer;color:#b33;font-family:inherit}
+.done-row td{opacity:.45}
+.done-row .oname{text-decoration:line-through;text-decoration-color:#aaa}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:8px;font-size:12px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div><h1>APAC Pipeline Tracker</h1><div class="sub">Global Blue · Shift4 · Vivien Ng · April 2026</div></div>
+  <div class="hright">
+    <div class="sync-status" id="syncStatus">
+      <div class="sync-dot saving" id="syncDot"></div>
+      <span id="syncText">Connecting…</span>
+    </div>
+    <button class="hbtn export" id="btnExport">⬇ Export backup</button>
+  </div>
+</div>
+
+<div class="main">
+<div class="smg" id="smg"></div>
+<div class="tabs">
+  <button class="tab on" data-t="pipeline">BD Pipeline</button>
+  <button class="tab" data-t="accounts">Current Accounts</button>
+  <button class="tab" data-t="agreements">Agreements</button>
+  <button class="tab" data-t="commercial">Commercial Terms</button>
+  <button class="tab" data-t="nextsteps">Next Steps</button>
+</div>
+<div id="pipeline" class="panel on">
+  <div class="toolbar">
+    <select class="filter" id="fm"><option value="">All markets</option></select>
+    <select class="filter" id="fp2"><option value="">All products</option></select>
+    <select class="filter" id="fpr2"><option value="">All probabilities</option></select>
+    <button class="addbtn ml-auto" id="addopp">+ Add opportunity</button>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr>
+      <th style="width:13%">Opportunity</th><th style="width:5%">Mkt</th><th style="width:12%">Product(s)</th>
+      <th style="width:5%">Prob.</th><th style="width:13%">Revenue</th><th style="width:9%">Stage</th>
+      <th style="width:19%">Commercial milestones</th><th style="width:16%">Tech milestones</th><th style="width:8%">Files</th>
+    </tr></thead>
+    <tbody id="pb"></tbody>
+  </table></div>
+</div>
+<div id="accounts" class="panel">
+  <div class="toolbar">
+    <select class="filter" id="acmkt"><option value="">All markets</option></select>
+    <button class="addbtn ml-auto" id="addacc">+ Add account</button>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th style="width:16%">Account</th><th style="width:6%">Mkt</th><th style="width:14%">Product(s)</th><th style="width:11%">Category</th><th style="width:10%">Status</th><th>Notes</th></tr></thead>
+    <tbody id="acb"></tbody>
+  </table></div>
+</div>
+<div id="agreements" class="panel">
+  <div class="toolbar"><button class="addbtn" id="addagr">+ Add agreement</button></div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th style="width:18%">Partner</th><th style="width:7%">Market</th><th style="width:14%">Type</th><th style="width:11%">Status</th><th style="width:10%">Signed</th><th style="width:10%">Expiry</th><th>Notes</th></tr></thead>
+    <tbody id="ab"></tbody>
+  </table></div>
+</div>
+<div id="commercial" class="panel">
+  <div class="toolbar"><button class="addbtn" id="addcom">+ Add commercial terms</button></div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th style="width:16%">Partner</th><th style="width:7%">Market</th><th style="width:12%">Product</th><th style="width:16%">Fee / Rate</th><th style="width:13%">Rev share</th><th style="width:11%">Status</th><th>Key terms</th></tr></thead>
+    <tbody id="cb"></tbody>
+  </table></div>
+</div>
+<div id="nextsteps" class="panel">
+  <div class="toolbar">
+    <select class="filter" id="nsmkt"><option value="">All markets</option></select>
+    <select class="filter" id="nspri"><option value="">All priorities</option></select>
+    <button class="addbtn ml-auto" id="addns">+ Add next step</button>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th style="width:16%">Opportunity</th><th style="width:6%">Mkt</th><th style="width:9%">Due</th><th style="width:8%">Priority</th><th style="width:9%">Owner</th><th style="width:10%">Status</th><th>Action</th></tr></thead>
+    <tbody id="nb"></tbody>
+  </table></div>
+</div>
+</div>
+
+<div id="modal" style="display:none"></div>
+<input type="file" id="fileInput" style="display:none" multiple accept="*/*">
+<div class="toast" id="toast"></div>
+
+<script>
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyt5qXzDLBWBmtjiDcZq2EfG-VYB4aD9FpLlwXGg45fELq78zjZPFg4Mg-IUIY8WFhyIA/exec';
+
+var STAGES=['Prospecting','Qualification','Proposal','Negotiation','Closed Won','Closed Lost','On Hold'];
+var PRIS=['High','Medium','Low'];
+var PROBS=['80%','60%','40%','20%','100%'];
+var PRODS=['Gateway','ATM DCC','POS DCC','eDCC','MCP','OPI','eCom/PBL','OPI + eDCC','OPI + eDCC + MCP','Gateway + MCP','POS DCC + Gateway','ATM DCC + POS DCC + Gateway','eCom/PBL + MCP/DCC'];
+var MKTS=['MY','SG','ID','VN','PH','TH','MV','Regional'];
+var CATS=['FI - Bank','Hospitality','PSP / Fintech','Retail'];
+var ACSTAT=['Live','Onboarding','UAT','Stalled','On Hold'];
+var ATYPES=['MOU','NDA','Master Agreement','Amendment','LOI','Referral Agreement','Commercial Agreement'];
+var ASTAT=['Draft','Under Review','Signed','Expired','Terminated'];
+var NSTAT=['Pending','In Progress','Done','Blocked'];
+var CSTAT=['In discussion','Agreed','Signed','Competing bid','Expired'];
+var COM_MS=[{key:'nda_signed',label:'NDA signed'},{key:'commercial_proposed',label:'Commercial proposed'},{key:'term_sheet_issued',label:'Term sheet issued'},{key:'term_sheet_signed',label:'Term sheet signed'},{key:'contract_issued',label:'Contract issued'},{key:'contract_signed',label:'Contract signed'}];
+var TECH_MS=[{key:'arch_framework',label:'Architectural framework agreed'},{key:'api_shared',label:'API / specs shared'},{key:'sandbox_access',label:'Sandbox / test access granted'},{key:'uat_started',label:'UAT started'},{key:'uat_complete',label:'UAT complete'},{key:'golive',label:'Go-live'}];
+
+function defaultMS(){
+  var com={},tech={};
+  COM_MS.forEach(function(m){com[m.key]={done:false,date:''};});
+  TECH_MS.forEach(function(m){tech[m.key]={done:false,date:''};});
+  return{com:com,tech:tech};
+}
+
+var D=null, saveTimer=null, pendingAttachOppId=null, editT=null;
+
+// ---- SYNC ----
+function setSyncStatus(state,text){
+  var dot=document.getElementById('syncDot'),txt=document.getElementById('syncText');
+  if(dot)dot.className='sync-dot '+state;
+  if(txt)txt.textContent=text;
+}
+function showToast(msg,dur){
+  dur=dur||2500;
+  var t=document.getElementById('toast');
+  if(!t)return;
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},dur);
+}
+
+// JSONP — works from file:// protocol
+function jsonpGet(url,cb){
+  var cbName='jcb_'+Date.now()+'_'+Math.floor(Math.random()*9999);
+  window[cbName]=function(data){
+    delete window[cbName];
+    var s=document.getElementById(cbName);if(s)s.remove();
+    cb(null,data);
+  };
+  var s=document.createElement('script');
+  s.id=cbName;
+  s.onerror=function(){delete window[cbName];s.remove();cb(new Error('failed'));};
+  s.src=url+(url.indexOf('?')>=0?'&':'?')+'callback='+cbName+'&t='+Date.now();
+  document.head.appendChild(s);
+}
+
+function loadFromDrive(){
+  setSyncStatus('saving','Loading from Drive…');
+  jsonpGet(SCRIPT_URL+'?action=load',function(err,json){
+    if(err||!json||!json.ok){
+      fallbackToLocal('Drive unreachable — using local cache');
+    } else if(json.data){
+      try{
+        D=JSON.parse(json.data);
+        D.opps.forEach(function(o){if(!o.milestones)o.milestones=defaultMS();if(!o.attachments)o.attachments=[];});
+        setSyncStatus('ok','Synced with Drive');
+        showToast('Loaded from Google Drive ✓');
+      }catch(e){D=getSeedData();setSyncStatus('error','Corrupted Drive data — reset to defaults');}
+    } else {
+      D=getSeedData();
+      setSyncStatus('ok','Connected to Drive — saving initial data…');
+      scheduleSave();
+    }
+    render();
+  });
+}
+
+function fallbackToLocal(msg){
+  var local=localStorage.getItem('apac_tracker_v3');
+  if(local){
+    try{
+      D=JSON.parse(local);
+      D.opps.forEach(function(o){if(!o.milestones)o.milestones=defaultMS();if(!o.attachments)o.attachments=[];});
+      setSyncStatus('error',msg||'Offline — using local cache');
+      showToast(msg||'Using local backup',3500);
+    }catch(e){D=getSeedData();setSyncStatus('error','Using default data');}
+  } else {
+    D=getSeedData();
+    setSyncStatus('error','Drive offline — using default data');
+  }
+  render();
+}
+
+function scheduleSave(){
+  try{localStorage.setItem('apac_tracker_v3',JSON.stringify(D));}catch(e){}
+  setSyncStatus('saving','Saving…');
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(pushToDrive,1500);
+}
+
+function pushToDrive(){
+  var payload=JSON.stringify(D);
+  // Use hidden iframe form POST — bypasses CORS from file://
+  var iframeName='sf_'+Date.now();
+  var iframe=document.createElement('iframe');
+  iframe.name=iframeName;iframe.style.display='none';
+  document.body.appendChild(iframe);
+  var form=document.createElement('form');
+  form.method='POST';form.action=SCRIPT_URL;form.target=iframeName;form.style.display='none';
+  var inp=document.createElement('input');inp.type='hidden';inp.name='payload';inp.value=payload;
+  form.appendChild(inp);document.body.appendChild(form);
+  iframe.onload=function(){
+    setTimeout(function(){
+      try{iframe.remove();form.remove();}catch(e){}
+      var t=new Date().toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit'});
+      setSyncStatus('ok','Saved to Drive '+t);
+    },600);
+  };
+  setTimeout(function(){try{iframe.remove();form.remove();}catch(e){}},8000);
+  form.submit();
+}
+
+function doExport(){
+  var blob=new Blob([JSON.stringify({version:3,exportedAt:new Date().toISOString(),data:D},null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  var ds=new Date().toISOString().slice(0,10);
+  a.href=url;a.download='APAC_Tracker_Backup_'+ds+'.json';a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);},2000);
+}
+
+// ---- HELPERS ----
+var SC={Prospecting:'bgr',Qualification:'bb',Proposal:'bp',Negotiation:'ba','Closed Won':'bg','Closed Lost':'bc','On Hold':'bgr'};
+var PC={High:'bc',Medium:'ba',Low:'bgr'};
+var ACLR={Draft:'bgr','Under Review':'ba',Signed:'bg',Expired:'bc',Terminated:'bc'};
+var NC={'In Progress':'bb',Done:'bg',Blocked:'bc',Pending:'ba'};
+var ACSC={Live:'bg',Onboarding:'bb',UAT:'ba',Stalled:'bc','On Hold':'bgr'};
+var CLC={Agreed:'bg',Signed:'bg','In discussion':'ba','Competing bid':'bc',Expired:'bgr'};
+
+function b(t,c){return'<span class="b '+(c||'bgr')+'">'+(t||'')+'</span>';}
+function nid(a){return a.length?Math.max.apply(null,a.map(function(x){return x.id;}))+1:1;}
+function g(id){var e=document.getElementById(id);return e?e.value.trim():'';}
+function opts(arr,cur){return arr.map(function(v){return'<option'+(v===cur?' selected':'')+'>'+v+'</option>';}).join('');}
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fileIcon(n){var e=(n||'').split('.').pop().toLowerCase();return{pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',ppt:'📋',pptx:'📋',jpg:'🖼',jpeg:'🖼',png:'🖼',gif:'🖼',zip:'🗜',txt:'📃',csv:'📊'}[e]||'📎';}
+function fmtSize(bytes){if(!bytes)return'';if(bytes<1024)return bytes+'B';if(bytes<1048576)return(bytes/1024).toFixed(1)+'KB';return(bytes/1048576).toFixed(1)+'MB';}
+function msPct(ms){if(!ms)return 0;var all=COM_MS.concat(TECH_MS);var done=all.filter(function(m){var src=COM_MS.find(function(x){return x.key===m.key;})?ms.com:ms.tech;return src&&src[m.key]&&src[m.key].done;}).length;return Math.round(done/all.length*100);}
+
+// ---- FILES ----
+function handleFiles(oppId,files){
+  var o=D.opps.find(function(x){return x.id===oppId;});if(!o)return;
+  var pending=files.length;
+  files.forEach(function(f){
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      var id='f_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+      o.attachments.push({id:id,name:f.name,size:f.size,type:f.type,b64:ev.target.result});
+      pending--;
+      if(pending===0){
+        scheduleSave();render();
+        var list=document.getElementById('attachModalList');
+        if(list)list.innerHTML=renderAttachModalList(o);
+      }
+    };
+    reader.readAsDataURL(f);
+  });
+}
+function openFile(a){
+  if(!a||!a.b64){alert('File data not available.');return;}
+  var el=document.createElement('a');el.href=a.b64;el.download=a.name;el.click();
+}
+
+// ---- RENDER ----
+function renderMilestones(o){
+  var comHtml=COM_MS.map(function(m){var done=o.milestones.com[m.key]&&o.milestones.com[m.key].done;return'<div class="ms-row" data-toggle="com:'+m.key+':'+o.id+'"><input type="checkbox"'+(done?' checked':'')+' readonly onclick="return false"><span class="ms-label'+(done?' done':'')+'">'+m.label+'</span></div>';}).join('');
+  var techHtml=TECH_MS.map(function(m){var done=o.milestones.tech[m.key]&&o.milestones.tech[m.key].done;return'<div class="ms-row" data-toggle="tech:'+m.key+':'+o.id+'"><input type="checkbox"'+(done?' checked':'')+' readonly onclick="return false"><span class="ms-label'+(done?' done':'')+'">'+m.label+'</span></div>';}).join('');
+  var pct=msPct(o.milestones);
+  var pips='<div class="ms-progress" data-openprogress="'+o.id+'">'+COM_MS.map(function(m){return'<div class="ms-pip'+(o.milestones.com[m.key]&&o.milestones.com[m.key].done?' on':'')+'"></div>';}).join('')+'<span style="width:6px"></span>'+TECH_MS.map(function(m){return'<div class="ms-pip'+(o.milestones.tech[m.key]&&o.milestones.tech[m.key].done?' on':'')+'"></div>';}).join('')+'<span class="ms-pct">'+pct+'%</span></div>';
+  return{com:'<div class="milestones"><div class="ms-section">Commercial</div>'+comHtml+'</div>',tech:'<div class="milestones"><div class="ms-section">Technical</div>'+techHtml+'</div>',pips:pips};
+}
+function renderAttachments(o){
+  var items=(o.attachments||[]).map(function(a){return'<div class="attach-item"><span class="attach-name" data-openfile="'+a.id+':'+o.id+'" title="'+esc(a.name)+'">'+fileIcon(a.name)+' '+esc(a.name)+'</span><span class="attach-del" data-delfile="'+a.id+':'+o.id+'">×</span></div>';}).join('');
+  return'<div class="attach-list">'+items+'</div><span class="attach-add" data-addfile="'+o.id+'">+ attach</span>';
+}
+function renderAttachModalList(o){
+  if(!o.attachments||!o.attachments.length)return'<p style="font-size:12px;color:#aaa;padding:8px 0">No files attached yet.</p>';
+  return o.attachments.map(function(a){return'<div class="attach-modal-item" id="ami_'+a.id+'"><span class="attach-icon">'+fileIcon(a.name)+'</span><div class="attach-info"><div class="an" data-openfile="'+a.id+':'+o.id+'">'+esc(a.name)+'</div><div class="as">'+fmtSize(a.size)+'</div></div><span class="attach-modal-del" data-delfile="'+a.id+':'+o.id+'">×</span></div>';}).join('');
+}
+
+function upd(){
+  var today=new Date().toISOString().slice(0,10);
+  var blocked=D.nextsteps.filter(function(x){return x.status==='Blocked';}).length;
+  var open=D.nextsteps.filter(function(x){return x.status!=='Done';}).length;
+  var ov=D.nextsteps.filter(function(x){return x.status!=='Done'&&x.due&&x.due<today;}).length;
+  document.getElementById('smg').innerHTML='<div class="mc"><div class="ml">BD opportunities</div><div class="mv">'+D.opps.length+'</div></div><div class="mc"><div class="ml">High prob (80%)</div><div class="mv ok">'+D.opps.filter(function(o){return o.prob==='80%';}).length+'</div></div><div class="mc"><div class="ml">Live / onboarding</div><div class="mv">'+D.accounts.filter(function(a){return a.status==='Live'||a.status==='Onboarding';}).length+'</div></div><div class="mc"><div class="ml">Active blockers</div><div class="mv'+(blocked?' hi':'')+'">'+blocked+'</div></div><div class="mc"><div class="ml">Open actions</div><div class="mv'+(ov?' warn':'')+'">'+open+(ov?'<span style="font-size:12px;color:#b07800"> ('+ov+' overdue)</span>':'')+'</div></div>';
+}
+
+function popFilt(){
+  var ids=['fm','fp2','fpr2','acmkt','nsmkt','nspri'];
+  var vals={};ids.forEach(function(id){vals[id]=document.getElementById(id)?document.getElementById(id).value:'';});
+  function set(id,html){var el=document.getElementById(id);if(!el)return;el.innerHTML=html;el.value=vals[id]||'';}
+  var ms=[...new Set(D.opps.map(function(o){return o.market;}))];
+  var ps=[...new Set(D.opps.map(function(o){return o.product;}))];
+  var prs=[...new Set(D.opps.map(function(o){return o.prob;}))].sort(function(a,z){return parseInt(z)-parseInt(a);});
+  var ams=[...new Set(D.accounts.map(function(a){return a.market;}))];
+  var nms=[...new Set(D.nextsteps.map(function(n){return n.market;}))];
+  set('fm','<option value="">All markets</option>'+ms.map(function(m){return'<option value="'+m+'">'+m+'</option>';}).join(''));
+  set('fp2','<option value="">All products</option>'+ps.map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join(''));
+  set('fpr2','<option value="">All probabilities</option>'+prs.map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join(''));
+  set('acmkt','<option value="">All markets</option>'+ams.map(function(m){return'<option value="'+m+'">'+m+'</option>';}).join(''));
+  set('nsmkt','<option value="">All markets</option>'+nms.map(function(m){return'<option value="'+m+'">'+m+'</option>';}).join(''));
+  set('nspri','<option value="">All priorities</option>'+['High','Medium','Low'].map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join(''));
+}
+
+function render(){
+  if(!D)return;
+  upd();popFilt();
+  var today=new Date().toISOString().slice(0,10);
+  var fm=document.getElementById('fm')?document.getElementById('fm').value:'';
+  var fp2=document.getElementById('fp2')?document.getElementById('fp2').value:'';
+  var fpr2=document.getElementById('fpr2')?document.getElementById('fpr2').value:'';
+  var opps=D.opps.slice().sort(function(a,z){return parseInt(z.prob)-parseInt(a.prob);}).filter(function(o){return(fm?o.market===fm:1)&&(fp2?o.product===fp2:1)&&(fpr2?o.prob===fpr2:1);});
+  document.getElementById('pb').innerHTML=opps.map(function(o){var ms=renderMilestones(o);return'<tr><td><div class="oname">'+(o.blocker?'<span class="bdot"></span>':'')+' '+esc(o.name)+'</div><div style="font-size:11px;color:#888;margin-top:2px;line-height:1.3">'+esc(o.notes).substring(0,55)+(o.notes.length>55?'…':'')+'</div><div style="margin-top:4px">'+ms.pips+'</div><div style="margin-top:4px"><span class="el" data-act="eo" data-id="'+o.id+'">edit</span></div></td><td>'+b(o.market,'bgr')+'</td><td style="font-size:12px">'+esc(o.product)+'</td><td>'+b(o.prob,o.prob==='80%'?'bg':o.prob==='60%'?'bt':o.prob==='40%'?'ba':'bc')+'</td><td><div style="font-size:12px"><span style="font-weight:600;color:#1a1a1a">Yr1:</span> '+(esc(o.yr1)||'—')+'</div><div style="font-size:12px;margin-top:2px"><span style="font-weight:600;color:#1a1a1a">5yr:</span> '+(esc(o.yr5)||'—')+'</div></td><td>'+b(o.stage,SC[o.stage]||'bgr')+'</td><td>'+ms.com+'</td><td>'+ms.tech+'</td><td>'+renderAttachments(o)+'</td></tr>';}).join('');
+
+  var acmkt=document.getElementById('acmkt')?document.getElementById('acmkt').value:'';
+  document.getElementById('acb').innerHTML=D.accounts.filter(function(a){return acmkt?a.market===acmkt:1;}).map(function(a){return'<tr><td><div class="oname">'+(a.blocker?'<span class="bdot"></span>':'')+' '+esc(a.name)+'</div><div style="margin-top:5px"><span class="el" data-act="eac" data-id="'+a.id+'">edit</span></div></td><td>'+b(a.market,'bgr')+'</td><td style="font-size:12px">'+esc(a.product)+'</td><td style="font-size:12px;color:#555">'+esc(a.cat)+'</td><td>'+b(a.status,ACSC[a.status]||'bgr')+'</td><td class="notes-cell">'+esc(a.notes)+'</td></tr>';}).join('');
+
+  document.getElementById('ab').innerHTML=D.agreements.map(function(a){return'<tr><td><div class="oname">'+esc(a.partner)+'</div><div style="margin-top:5px"><span class="el" data-act="ea" data-id="'+a.id+'">edit</span></div></td><td>'+b(a.market,'bgr')+'</td><td style="font-size:12px">'+esc(a.type)+'</td><td>'+b(a.status,ACLR[a.status]||'bgr')+'</td><td style="font-size:12px">'+(a.signed||'—')+'</td><td style="font-size:12px">'+(a.expiry||'—')+'</td><td class="notes-cell">'+esc(a.notes)+'</td></tr>';}).join('');
+
+  document.getElementById('cb').innerHTML=D.commercial.map(function(c){return'<tr><td><div class="oname">'+esc(c.partner)+'</div><div style="margin-top:5px"><span class="el" data-act="ec" data-id="'+c.id+'">edit</span></div></td><td>'+b(c.market,'bgr')+'</td><td style="font-size:12px">'+esc(c.product)+'</td><td style="font-size:12px;font-weight:600">'+(esc(c.fee)||'—')+'</td><td style="font-size:12px">'+(esc(c.rev)||'—')+'</td><td>'+b(c.status,CLC[c.status]||'ba')+'</td><td class="notes-cell">'+esc(c.terms)+'</td></tr>';}).join('');
+
+  var nsmkt=document.getElementById('nsmkt')?document.getElementById('nsmkt').value:'';
+  var nspri=document.getElementById('nspri')?document.getElementById('nspri').value:'';
+  var ns=D.nextsteps.slice().sort(function(a,z){var s={Blocked:0,'In Progress':1,Pending:2,Done:3},p={High:0,Medium:1,Low:2};return(s[a.status]||2)-(s[z.status]||2)||(p[a.priority]||1)-(p[z.priority]||1)||(a.due||'').localeCompare(z.due||'');}).filter(function(n){return(nsmkt?n.market===nsmkt:1)&&(nspri?n.priority===nspri:1);});
+  document.getElementById('nb').innerHTML=ns.map(function(n){var ov=n.due&&n.due<today&&n.status!=='Done';return'<tr class="'+(n.status==='Done'?'done-row':'')+'"><td><div class="oname">'+esc(n.opp)+'</div><div style="margin-top:5px"><span class="el" data-act="en" data-id="'+n.id+'">edit</span>'+(n.status!=='Done'?' · <span class="el" data-act="dn" data-id="'+n.id+'">✓ done</span>':'')+'</div></td><td>'+b(n.market,'bgr')+'</td><td style="font-size:12px;'+(ov?'color:#b33;font-weight:700;':'')+'">'+( n.due||'—')+(ov?' ⚠':'')+'</td><td>'+b(n.priority,PC[n.priority]||'bgr')+'</td><td style="font-size:12px">'+esc(n.owner)+'</td><td>'+b(n.status,NC[n.status]||'ba')+'</td><td class="notes-cell">'+esc(n.action)+'</td></tr>';}).join('');
+}
+
+// ---- MILESTONE MODAL ----
+function openMilestoneModal(oppId){
+  var o=D.opps.find(function(x){return x.id===+oppId;});if(!o)return;
+  var comF=COM_MS.map(function(m){return'<div class="ms-edit-row"><input type="checkbox" class="ms-edit-check" id="ms_com_'+m.key+'"'+(o.milestones.com[m.key]&&o.milestones.com[m.key].done?' checked':'')+'><label class="ms-edit-label" for="ms_com_'+m.key+'">'+m.label+'</label><div class="ms-edit-date"><input type="date" id="ms_com_'+m.key+'_date" value="'+(o.milestones.com[m.key]&&o.milestones.com[m.key].date||'')+'"></div></div>';}).join('');
+  var techF=TECH_MS.map(function(m){return'<div class="ms-edit-row"><input type="checkbox" class="ms-edit-check" id="ms_tech_'+m.key+'"'+(o.milestones.tech[m.key]&&o.milestones.tech[m.key].done?' checked':'')+'><label class="ms-edit-label" for="ms_tech_'+m.key+'">'+m.label+'</label><div class="ms-edit-date"><input type="date" id="ms_tech_'+m.key+'_date" value="'+(o.milestones.tech[m.key]&&o.milestones.tech[m.key].date||'')+'"></div></div>';}).join('');
+  document.getElementById('modal').style.display='flex';
+  document.getElementById('modal').innerHTML='<div class="modal-bg" id="mbg"><div class="modal" style="width:580px"><h3>Milestones & files — '+esc(o.name)+'</h3><div class="modal-tabs"><button class="modal-tab on" data-mt="mt-com">Commercial</button><button class="modal-tab" data-mt="mt-tech">Technical</button><button class="modal-tab" data-mt="mt-files">Files ('+o.attachments.length+')</button></div><div id="mt-com" class="modal-panel on"><div class="ms-edit-section"><div class="ms-edit-title">Commercial milestones</div>'+comF+'</div></div><div id="mt-tech" class="modal-panel"><div class="ms-edit-section"><div class="ms-edit-title">Technical milestones</div>'+techF+'</div></div><div id="mt-files" class="modal-panel"><div class="attach-drop" id="attachDrop"><p>Drop files here or click to upload</p><span>Any file type · synced to Google Drive</span></div><div class="attach-modal-list" id="attachModalList">'+renderAttachModalList(o)+'</div></div><div class="mf"><button class="btc" id="mcancel">Cancel</button><button class="btp" data-savems="'+oppId+'">Save</button></div></div></div>';
+  var drop=document.getElementById('attachDrop');
+  drop.addEventListener('click',function(){pendingAttachOppId=+oppId;document.getElementById('fileInput').click();});
+  drop.addEventListener('dragover',function(e){e.preventDefault();drop.classList.add('over');});
+  drop.addEventListener('dragleave',function(){drop.classList.remove('over');});
+  drop.addEventListener('drop',function(e){e.preventDefault();drop.classList.remove('over');handleFiles(+oppId,[].slice.call(e.dataTransfer.files));});
+}
+
+// ---- STANDARD MODALS ----
+function openModal(type,item){
+  editT=item?{type:type,item:item}:null;var ie=!!item;var fields='';
+  if(type==='opp'){var o=item||{name:'',market:'MY',product:'Gateway',prob:'40%',yr1:'',yr5:'',stage:'Prospecting',owner:'Vivien',notes:'',blocker:false};fields='<div class="fd"><label>Name</label><input id="fn" value="'+esc(o.name)+'"></div><div class="g2"><div class="fd"><label>Market</label><select id="fm2">'+opts(MKTS,o.market)+'</select></div><div class="fd"><label>Probability</label><select id="fprob">'+opts(PROBS,o.prob)+'</select></div><div class="fd"><label>Stage</label><select id="fst">'+opts(STAGES,o.stage)+'</select></div><div class="fd"><label>Owner</label><input id="fo" value="'+esc(o.owner)+'"></div><div class="fd"><label>Yr 1 revenue</label><input id="fy1" value="'+esc(o.yr1)+'" placeholder="e.g. USD 155k"></div><div class="fd"><label>5yr revenue</label><input id="fy5" value="'+esc(o.yr5)+'" placeholder="e.g. USD 4.1M"></div></div><div class="fd"><label>Product(s)</label><input id="fprod" value="'+esc(o.product)+'" list="pl"><datalist id="pl">'+PRODS.map(function(p){return'<option value="'+esc(p)+'">';}).join('')+'</datalist></div><div class="fd"><label>Notes</label><textarea id="fno">'+esc(o.notes)+'</textarea></div><div class="fd" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="fbl" style="width:auto"'+(o.blocker?' checked':'')+'><label for="fbl" style="text-transform:none;font-size:13px;margin:0;font-weight:400">Has active blocker</label></div>'+(ie?'<p style="font-size:11px;color:#aaa;margin-top:8px">Milestones &amp; files: click the progress bar in the pipeline table.</p>':'');}
+  else if(type==='acc'){var a=item||{name:'',market:'MY',product:'OPI',cat:'Hospitality',status:'Onboarding',notes:'',blocker:false};fields='<div class="fd"><label>Account name</label><input id="fn" value="'+esc(a.name)+'"></div><div class="g2"><div class="fd"><label>Market</label><select id="fm2">'+opts(MKTS,a.market)+'</select></div><div class="fd"><label>Category</label><select id="fcat">'+opts(CATS,a.cat)+'</select></div><div class="fd"><label>Status</label><select id="fst">'+opts(ACSTAT,a.status)+'</select></div></div><div class="fd"><label>Product(s)</label><input id="fprod" value="'+esc(a.product)+'"></div><div class="fd"><label>Notes</label><textarea id="fno">'+esc(a.notes)+'</textarea></div><div class="fd" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="fbl" style="width:auto"'+(a.blocker?' checked':'')+'><label for="fbl" style="text-transform:none;font-size:13px;margin:0;font-weight:400">Has active blocker</label></div>';}
+  else if(type==='agr'){var ag=item||{partner:'',market:'MY',type:'MOU',status:'Draft',signed:'',expiry:'',notes:''};fields='<div class="fd"><label>Partner</label><input id="fpa" value="'+esc(ag.partner)+'"></div><div class="g2"><div class="fd"><label>Market</label><select id="fm2">'+opts(MKTS,ag.market)+'</select></div><div class="fd"><label>Type</label><select id="fty">'+opts(ATYPES,ag.type)+'</select></div><div class="fd"><label>Status</label><select id="fst">'+opts(ASTAT,ag.status)+'</select></div><div class="fd"><label>Signed date</label><input type="date" id="fsi" value="'+ag.signed+'"></div><div class="fd"><label>Expiry</label><input type="date" id="fex" value="'+ag.expiry+'"></div></div><div class="fd"><label>Notes</label><textarea id="fno">'+esc(ag.notes)+'</textarea></div>';}
+  else if(type==='com'){var c=item||{partner:'',market:'MY',product:'',fee:'',rev:'',status:'In discussion',terms:''};fields='<div class="g2"><div class="fd"><label>Partner</label><input id="fpa" value="'+esc(c.partner)+'"></div><div class="fd"><label>Market</label><select id="fm2">'+opts(MKTS,c.market)+'</select></div><div class="fd"><label>Product</label><input id="fprod" value="'+esc(c.product)+'"></div><div class="fd"><label>Status</label><select id="fst">'+opts(CSTAT,c.status)+'</select></div><div class="fd"><label>Fee / Rate</label><input id="ffee" value="'+esc(c.fee)+'" placeholder="e.g. 0.20% TPV + MYR 0.50/txn"></div><div class="fd"><label>Rev share</label><input id="frev" value="'+esc(c.rev)+'" placeholder="e.g. 50/50"></div></div><div class="fd"><label>Key terms</label><textarea id="fte">'+esc(c.terms)+'</textarea></div>';}
+  else if(type==='ns'){var n=item||{opp:'',market:'MY',due:'',priority:'Medium',owner:'Vivien',status:'Pending',action:''};fields='<div class="g2"><div class="fd"><label>Opportunity</label><input id="fop" value="'+esc(n.opp)+'" list="ol"><datalist id="ol">'+D.opps.map(function(x){return'<option value="'+esc(x.name)+'">';}).join('')+'</datalist></div><div class="fd"><label>Market</label><select id="fm2">'+opts(MKTS,n.market)+'</select></div><div class="fd"><label>Due date</label><input type="date" id="fdu" value="'+n.due+'"></div><div class="fd"><label>Priority</label><select id="fp">'+opts(PRIS,n.priority)+'</select></div><div class="fd"><label>Owner</label><input id="fo" value="'+esc(n.owner)+'"></div><div class="fd"><label>Status</label><select id="fst">'+opts(NSTAT,n.status)+'</select></div></div><div class="fd"><label>Action</label><textarea id="fac" style="min-height:68px">'+esc(n.action)+'</textarea></div>';}
+  var lbl={opp:'Opportunity',acc:'Account',agr:'Agreement',com:'Commercial Terms',ns:'Next Step'};
+  document.getElementById('modal').style.display='flex';
+  document.getElementById('modal').innerHTML='<div class="modal-bg" id="mbg"><div class="modal"><h3>'+(ie?'Edit':'Add')+' '+lbl[type]+'</h3>'+fields+'<div class="mf">'+(ie?'<button class="btd" data-del="'+type+':'+item.id+'">Delete</button>':'')+'<button class="btc" id="mcancel">Cancel</button><button class="btp" data-save="'+type+'">Save</button></div></div></div>';
+}
+
+function closeModal(){document.getElementById('modal').style.display='none';}
+
+function saveMilestones(oppId){
+  var o=D.opps.find(function(x){return x.id===+oppId;});if(!o)return;
+  COM_MS.forEach(function(m){o.milestones.com[m.key]={done:!!(document.getElementById('ms_com_'+m.key)&&document.getElementById('ms_com_'+m.key).checked),date:document.getElementById('ms_com_'+m.key+'_date')?document.getElementById('ms_com_'+m.key+'_date').value:''};});
+  TECH_MS.forEach(function(m){o.milestones.tech[m.key]={done:!!(document.getElementById('ms_tech_'+m.key)&&document.getElementById('ms_tech_'+m.key).checked),date:document.getElementById('ms_tech_'+m.key+'_date')?document.getElementById('ms_tech_'+m.key+'_date').value:''};});
+  scheduleSave();closeModal();render();
+}
+
+function saveItem(tp){
+  if(tp==='opp'){var o={name:g('fn'),market:g('fm2'),product:g('fprod'),prob:g('fprob'),yr1:g('fy1'),yr5:g('fy5'),stage:g('fst'),owner:g('fo'),notes:g('fno'),blocker:!!(document.getElementById('fbl')&&document.getElementById('fbl').checked)};if(editT)Object.assign(D.opps.find(function(x){return x.id===editT.item.id;}),o);else D.opps.push({id:nid(D.opps),name:o.name,market:o.market,product:o.product,prob:o.prob,yr1:o.yr1,yr5:o.yr5,stage:o.stage,owner:o.owner,notes:o.notes,blocker:o.blocker,milestones:defaultMS(),attachments:[]});}
+  else if(tp==='acc'){var ac={name:g('fn'),market:g('fm2'),product:g('fprod'),cat:g('fcat'),status:g('fst'),notes:g('fno'),blocker:!!(document.getElementById('fbl')&&document.getElementById('fbl').checked)};if(editT)Object.assign(D.accounts.find(function(x){return x.id===editT.item.id;}),ac);else D.accounts.push(Object.assign({id:nid(D.accounts)},ac));}
+  else if(tp==='agr'){var ag={partner:g('fpa'),market:g('fm2'),type:g('fty'),status:g('fst'),signed:g('fsi'),expiry:g('fex'),notes:g('fno')};if(editT)Object.assign(D.agreements.find(function(x){return x.id===editT.item.id;}),ag);else D.agreements.push(Object.assign({id:nid(D.agreements)},ag));}
+  else if(tp==='com'){var co={partner:g('fpa'),market:g('fm2'),product:g('fprod'),fee:g('ffee'),rev:g('frev'),status:g('fst'),terms:g('fte')};if(editT)Object.assign(D.commercial.find(function(x){return x.id===editT.item.id;}),co);else D.commercial.push(Object.assign({id:nid(D.commercial)},co));}
+  else if(tp==='ns'){var ns={opp:g('fop'),market:g('fm2'),due:g('fdu'),priority:g('fp'),owner:g('fo'),status:g('fst'),action:g('fac')};if(editT)Object.assign(D.nextsteps.find(function(x){return x.id===editT.item.id;}),ns);else D.nextsteps.push(Object.assign({id:nid(D.nextsteps)},ns));}
+  scheduleSave();closeModal();render();
+}
+
+// ---- EVENTS ----
+document.addEventListener('click',function(e){
+  var t=e.target;
+  if(t.classList.contains('tab')&&t.dataset.t){document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});document.querySelectorAll('.panel').forEach(function(x){x.classList.remove('on');});t.classList.add('on');var p=document.getElementById(t.dataset.t);if(p)p.classList.add('on');return;}
+  if(t.classList.contains('modal-tab')&&t.dataset.mt){document.querySelectorAll('.modal-tab').forEach(function(x){x.classList.remove('on');});document.querySelectorAll('.modal-panel').forEach(function(x){x.classList.remove('on');});t.classList.add('on');var mp=document.getElementById(t.dataset.mt);if(mp)mp.classList.add('on');return;}
+  if(t.id==='btnExport'){doExport();return;}
+  if(t.id==='addopp'){openModal('opp');return;}
+  if(t.id==='addacc'){openModal('acc');return;}
+  if(t.id==='addagr'){openModal('agr');return;}
+  if(t.id==='addcom'){openModal('com');return;}
+  if(t.id==='addns'){openModal('ns');return;}
+  if(t.id==='mcancel'||t.id==='mbg'){closeModal();return;}
+  if(t.dataset.save){saveItem(t.dataset.save);return;}
+  if(t.dataset.savems){saveMilestones(t.dataset.savems);return;}
+  if(t.dataset.del){var parts=t.dataset.del.split(':');var tp=parts[0],did=parts[1];var map={opp:'opps',acc:'accounts',agr:'agreements',com:'commercial',ns:'nextsteps'};if(confirm('Delete this entry?')){D[map[tp]]=D[map[tp]].filter(function(x){return x.id!==+did;});scheduleSave();closeModal();render();}return;}
+  if(t.dataset.act==='dn'){var nn=D.nextsteps.find(function(x){return x.id===+t.dataset.id;});if(nn){nn.status='Done';scheduleSave();render();}return;}
+  if(t.dataset.act==='eo'){openModal('opp',D.opps.find(function(x){return x.id===+t.dataset.id;}));return;}
+  if(t.dataset.act==='eac'){openModal('acc',D.accounts.find(function(x){return x.id===+t.dataset.id;}));return;}
+  if(t.dataset.act==='ea'){openModal('agr',D.agreements.find(function(x){return x.id===+t.dataset.id;}));return;}
+  if(t.dataset.act==='ec'){openModal('com',D.commercial.find(function(x){return x.id===+t.dataset.id;}));return;}
+  if(t.dataset.act==='en'){openModal('ns',D.nextsteps.find(function(x){return x.id===+t.dataset.id;}));return;}
+  var msRow=t.closest('[data-toggle]');
+  if(msRow&&msRow.dataset.toggle){var tparts=msRow.dataset.toggle.split(':');var track=tparts[0],key=tparts[1],idStr=tparts[2];var oo=D.opps.find(function(x){return x.id===+idStr;});if(oo&&oo.milestones[track]&&oo.milestones[track][key]!==undefined){oo.milestones[track][key].done=!oo.milestones[track][key].done;scheduleSave();render();}return;}
+  var prog=t.closest('[data-openprogress]');
+  if(prog){openMilestoneModal(+prog.dataset.openprogress);return;}
+  if(t.dataset.addfile){pendingAttachOppId=+t.dataset.addfile;document.getElementById('fileInput').click();return;}
+  if(t.dataset.delfile){var dparts=t.dataset.delfile.split(':');var fid=dparts[0],oid=dparts[1];var oa=D.opps.find(function(x){return x.id===+oid;});if(oa){oa.attachments=oa.attachments.filter(function(a){return a.id!==fid;});scheduleSave();}var ami=document.getElementById('ami_'+fid);if(ami)ami.remove();render();return;}
+  if(t.dataset.openfile){var oparts=t.dataset.openfile.split(':');var ofid=oparts[0],ooid=oparts[1];var ob=D.opps.find(function(x){return x.id===+ooid;});if(ob){var att=ob.attachments.find(function(x){return x.id===ofid;});if(att)openFile(att);}return;}
+});
+
+document.getElementById('fileInput').addEventListener('change',function(){
+  if(pendingAttachOppId&&this.files.length)handleFiles(pendingAttachOppId,[].slice.call(this.files));
+  pendingAttachOppId=null;this.value='';
+});
+
+['fm','fp2','fpr2','acmkt','nsmkt','nspri'].forEach(function(id){
+  var el=document.getElementById(id);if(el)el.addEventListener('change',render);
+});
+
+// ---- SEED DATA ----
+function getSeedData(){return{
+opps:[
+  {id:1,name:'SCB – Digio',market:'TH',product:'Gateway',prob:'80%',yr1:'USD 161k',yr5:'USD 2.3M',stage:'Negotiation',owner:'Vivien',notes:'Project approved at Steering Committee / Board level. UR submission 9–23 April. Go-live target Aug 2026.',blocker:false,milestones:{com:{nda_signed:{done:true,date:''},commercial_proposed:{done:true,date:''},term_sheet_issued:{done:true,date:''},term_sheet_signed:{done:false,date:''},contract_issued:{done:false,date:''},contract_signed:{done:false,date:''}},tech:{arch_framework:{done:true,date:''},api_shared:{done:true,date:''},sandbox_access:{done:false,date:''},uat_started:{done:false,date:''},uat_complete:{done:false,date:''},golive:{done:false,date:''}}},attachments:[]},
+  {id:2,name:'UOB – Cubepay',market:'SG',product:'Gateway',prob:'80%',yr1:'USD 155k',yr5:'USD 4.1M',stage:'Proposal',owner:'Vivien',notes:'Awaiting product team final architecture decision (Fabio / Kok Kiong). Cannot confirm until S4 approves.',blocker:true,milestones:{com:{nda_signed:{done:true,date:''},commercial_proposed:{done:true,date:''},term_sheet_issued:{done:false,date:''},term_sheet_signed:{done:false,date:''},contract_issued:{done:false,date:''},contract_signed:{done:false,date:''}},tech:{arch_framework:{done:false,date:''},api_shared:{done:false,date:''},sandbox_access:{done:false,date:''},uat_started:{done:false,date:''},uat_complete:{done:false,date:''},golive:{done:false,date:''}}},attachments:[]},
+  {id:3,name:'MAYA',market:'PH',product:'POS DCC + Gateway',prob:'80%',yr1:'USD 266k',yr5:'USD 5.7M',stage:'Proposal',owner:'Vivien',notes:'Term sheet shared — awaiting signed copy. Pending final board approval.',blocker:false,milestones:{com:{nda_signed:{done:true,date:''},commercial_proposed:{done:true,date:''},term_sheet_issued:{done:true,date:''},term_sheet_signed:{done:false,date:''},contract_issued:{done:false,date:''},contract_signed:{done:false,date:''}},tech:{arch_framework:{done:false,date:''},api_shared:{done:false,date:''},sandbox_access:{done:false,date:''},uat_started:{done:false,date:''},uat_complete:{done:false,date:''},golive:{done:false,date:''}}},attachments:[]},
+  {id:4,name:'Fiuu',market:'MY',product:'eCom/PBL + MCP/DCC',prob:'80%',yr1:'N/A',yr5:'N/A',stage:'Negotiation',owner:'Vivien',notes:'eCom/PBL development complete. Commercial agreed: 0.20% TPV + MYR 0.50/txn. Contract signing next step.',blocker:false,milestones:{com:{nda_signed:{done:true,date:''},commercial_proposed:{done:true,date:''},term_sheet_issued:{done:true,date:''},term_sheet_signed:{done:true,date:''},contract_issued:{done:true,date:''},contract_signed:{done:false,date:''}},tech:{arch_framework:{done:true,date:''},api_shared:{done:true,date:''},sandbox_access:{done:true,date:''},uat_started:{done:true,date:''},uat_complete:{done:true,date:''},golive:{done:false,date:''}}},attachments:[]},
+  {id:5,name:'BRI',market:'ID',product:'ATM DCC + POS DCC + Gateway',prob:'60%',yr1:'USD 1.1M',yr5:'USD 9.0M',stage:'Proposal',owner:'Vivien',notes:'Commercial proposal sent. Call 15 Apr. Competing bid from FEXCO (75/25).',blocker:false,milestones:{com:{nda_signed:{done:false,date:''},commercial_proposed:{done:true,date:''},term_sheet_issued:{done:false,date:''},term_sheet_signed:{done:false,date:''},contract_issued:{done:false,date:''},contract_signed:{done:false,date:''}},tech:defaultMS().tech},attachments:[]},
+  {id:6,name:'BCA',market:'ID',product:'Gateway + MCP',prob:'40%',yr1:'N/A',yr5:'N/A',stage:'Qualification',owner:'Vivien',notes:'Technical discussion and API review in progress. Early stage.',blocker:false,milestones:{com:defaultMS().com,tech:{arch_framework:{done:false,date:''},api_shared:{done:true,date:''},sandbox_access:{done:false,date:''},uat_started:{done:false,date:''},uat_complete:{done:false,date:''},golive:{done:false,date:''}}},attachments:[]},
+  {id:7,name:'Vietcombank',market:'VN',product:'Gateway',prob:'40%',yr1:'USD 256k',yr5:'USD 1.7M',stage:'Proposal',owner:'Vivien',notes:'Fund flows clarified. Hotel bridging active (Accor, IHG, Marriott). Pending internal VCB approval.',blocker:false,milestones:{com:{nda_signed:{done:true,date:''},commercial_proposed:{done:true,date:''},term_sheet_issued:{done:false,date:''},term_sheet_signed:{done:false,date:''},contract_issued:{done:false,date:''},contract_signed:{done:false,date:''}},tech:defaultMS().tech},attachments:[]},
+  {id:8,name:'Bank of Maldives',market:'MV',product:'Gateway',prob:'20%',yr1:'N/A',yr5:'N/A',stage:'Prospecting',owner:'Vivien',notes:'Core system upgrade ongoing — new integrations from Q3 2026.',blocker:true,milestones:defaultMS(),attachments:[]},
+  {id:9,name:'BNI',market:'ID',product:'POS DCC',prob:'20%',yr1:'N/A',yr5:'N/A',stage:'Prospecting',owner:'Vivien',notes:'NDA signed. Pending follow-up meeting.',blocker:false,milestones:{com:{nda_signed:{done:true,date:''},commercial_proposed:{done:false,date:''},term_sheet_issued:{done:false,date:''},term_sheet_signed:{done:false,date:''},contract_issued:{done:false,date:''},contract_signed:{done:false,date:''}},tech:defaultMS().tech},attachments:[]},
+  {id:10,name:'Mandiri (Yokke)',market:'ID',product:'ATM DCC + eDCC',prob:'20%',yr1:'USD 1.1M',yr5:'USD 9.0M',stage:'Qualification',owner:'Vivien',notes:'DCC RFI ongoing. New Head of Acquiring (Ibu Abeka) joining — meeting 1st week May.',blocker:true,milestones:defaultMS(),attachments:[]},
+  {id:11,name:'Hong Leong Bank',market:'MY',product:'POS DCC',prob:'20%',yr1:'USD 145k',yr5:'USD 2.6M',stage:'Qualification',owner:'Vivien',notes:'POS DCC feasibility analysis in progress. ATM DCC currency expansion ongoing.',blocker:false,milestones:defaultMS(),attachments:[]},
+],
+accounts:[
+  {id:1,name:'Maybank (MBB)',market:'MY',product:'ATM DCC + POS DCC',cat:'FI - Bank',status:'UAT',notes:'System migration ongoing — GB SDM supporting UAT.',blocker:false},
+  {id:2,name:'Hong Leong Bank',market:'MY',product:'ATM DCC',cat:'FI - Bank',status:'Live',notes:'Enabling more currencies for ATM DCC. POS DCC feasibility underway.',blocker:false},
+  {id:3,name:'AmBank',market:'MY',product:'POS DCC',cat:'FI - Bank',status:'Live',notes:'No issues. Retain market presence, protect POS DCC base.',blocker:false},
+  {id:4,name:'Maybank – Hospitality / MCP',market:'MY',product:'OPI + DCC',cat:'Hospitality',status:'Onboarding',notes:'Introducing hotels for OPI + DCC and retail for POS DCC.',blocker:false},
+  {id:5,name:'DBS Singapore',market:'SG',product:'ATM DCC',cat:'FI - Bank',status:'Live',notes:'Status quo. ATM DCC stable.',blocker:false},
+  {id:6,name:'UOB Singapore',market:'SG',product:'OPI',cat:'FI - Bank',status:'Onboarding',notes:'Bridged UOB to Accor HQ. CubePay rollout targeted end-2026.',blocker:false},
+  {id:7,name:'Mandiri (Yokke)',market:'ID',product:'OPI + eDCC',cat:'FI - Bank',status:'Onboarding',notes:'8 hotels live. Fairmont JKT + IC Bali pending (Oracle/acquirer).',blocker:true},
+  {id:8,name:'Accor MY',market:'MY',product:'OPI',cat:'Hospitality',status:'Onboarding',notes:'1 live, 3 going live April, 9 remaining before EOY.',blocker:false},
+  {id:9,name:'Accor ID',market:'ID',product:'OPI',cat:'Hospitality',status:'Onboarding',notes:'7 hotels ongoing.',blocker:false},
+  {id:10,name:'IHG MY',market:'MY',product:'OPI',cat:'Hospitality',status:'Onboarding',notes:'1 property expected live before H2.',blocker:false},
+  {id:11,name:'IHG ID',market:'ID',product:'OPI',cat:'Hospitality',status:'Onboarding',notes:'11 properties ongoing.',blocker:false},
+  {id:12,name:'Hyatt MY',market:'MY',product:'OPI',cat:'Hospitality',status:'Live',notes:'6 of 9 properties now live.',blocker:false},
+  {id:13,name:'Hyatt ID',market:'ID',product:'OPI',cat:'Hospitality',status:'Live',notes:'1 property live.',blocker:false},
+  {id:14,name:'CHM / St Giles MY',market:'MY',product:'OPI',cat:'Hospitality',status:'Onboarding',notes:'11 properties expected live before EOY.',blocker:false},
+],
+agreements:[
+  {id:1,partner:'Fiuu',market:'MY',type:'Commercial Agreement',status:'Draft',signed:'',expiry:'',notes:'Contract signing next step. Terms: 0.20% TPV + MYR 0.50/txn.'},
+  {id:2,partner:'Vietcombank',market:'VN',type:'Referral Agreement',status:'Draft',signed:'',expiry:'',notes:'Fund flows clarified. Pending internal VCB approval.'},
+  {id:3,partner:'BNI',market:'ID',type:'NDA',status:'Signed',signed:'',expiry:'',notes:'NDA signed.'},
+  {id:4,partner:'UOB Singapore',market:'SG',type:'Master Agreement',status:'Signed',signed:'2024-01-01',expiry:'2026-12-31',notes:'Active FI partnership.'},
+  {id:5,partner:'SCB – Digio',market:'TH',type:'Master Agreement',status:'Under Review',signed:'',expiry:'',notes:'UR submission 9–23 April.'},
+],
+commercial:[
+  {id:1,partner:'Fiuu',market:'MY',product:'eCom/PBL',fee:'0.20% TPV + MYR 0.50/txn',rev:'TBC',status:'Agreed',terms:'Agreed. Contract signing next step.'},
+  {id:2,partner:'Vietcombank',market:'VN',product:'Gateway (OPI)',fee:'TBC',rev:'IHG VN: 0.25% TPV confirmed',status:'In discussion',terms:'Hotel bridging active. Pending VCB internal approval.'},
+  {id:3,partner:'FEXCO (competing bid)',market:'ID',product:'ATM/POS DCC',fee:'75/25 rev split',rev:'75% FEXCO / 25% bank',status:'Competing bid',terms:'BRI received FEXCO proposal. GB to counter.'},
+  {id:4,partner:'SCB – Digio',market:'TH',product:'Gateway',fee:'TBC post-UR',rev:'TBC',status:'In discussion',terms:'Financials to be confirmed post-UR approval.'},
+],
+nextsteps:[
+  {id:1,opp:'SCB – Digio',market:'TH',due:'2026-04-23',priority:'High',owner:'Vivien',status:'In Progress',action:'UR submission closes 23 April. Monitor approval; confirm Aug 2026 go-live.'},
+  {id:2,opp:'Fiuu',market:'MY',due:'2026-04-25',priority:'High',owner:'Vivien',status:'Pending',action:'Final agreement signing. Launch joint merchant drive.'},
+  {id:3,opp:'BRI',market:'ID',due:'2026-04-15',priority:'High',owner:'Vivien',status:'In Progress',action:'Call 15 April. Counter FEXCO 75/25 proposal.'},
+  {id:4,opp:'Vietcombank',market:'VN',due:'2026-04-30',priority:'High',owner:'Vivien',status:'Pending',action:'Arrange Marriott ↔ VCB meeting. Follow up on VCB internal approval.'},
+  {id:5,opp:'MAYA',market:'PH',due:'2026-04-30',priority:'High',owner:'Vivien',status:'Pending',action:'Chase signed term sheet. Monitor board approval.'},
+  {id:6,opp:'UOB – Cubepay',market:'SG',due:'2026-04-30',priority:'Medium',owner:'Vivien',status:'Blocked',action:'Awaiting product team architecture decision (Fabio / Kok Kiong).'},
+  {id:7,opp:'Mandiri (Yokke)',market:'ID',due:'2026-05-01',priority:'Medium',owner:'Vivien',status:'Pending',action:'Meeting with Ibu Abeka 1st week May.'},
+  {id:8,opp:'Mandiri – Hotels',market:'ID',due:'2026-04-30',priority:'High',owner:'Vivien',status:'Blocked',action:'Resolve IC Jimbaran VCC→OXI→Opera (Oracle). Unblock Fairmont JKT + IC Bali.'},
+  {id:9,opp:'ID Entity Setup',market:'ID',due:'2026-04-30',priority:'High',owner:'Vivien',status:'Blocked',action:'Pending inputs from Eric/Genevieve. Submit to consulting firm.'},
+  {id:10,opp:'Hotel Pipeline MY',market:'MY',due:'2026-04-30',priority:'Medium',owner:'Vivien',status:'Blocked',action:'IC KL OPI on hold. Le Meridien KL: pursue HQ override vs FreedomPay.'},
+  {id:11,opp:'BCA',market:'ID',due:'2026-05-10',priority:'Medium',owner:'Vivien',status:'In Progress',action:'Continue technical discussion and API review.'},
+  {id:12,opp:'Bank of Maldives',market:'MV',due:'2026-05-15',priority:'Low',owner:'Vivien',status:'Pending',action:'Follow-up meeting — MPGS integration approach.'},
+  {id:13,opp:'Hong Leong Bank',market:'MY',due:'2026-05-15',priority:'Low',owner:'Vivien',status:'Pending',action:'Monitor POS DCC feasibility. Continue ATM DCC currency expansion.'},
+]
+};}
+
+// ---- BOOT ----
+loadFromDrive();
+</script>
+</body>
+</html>
